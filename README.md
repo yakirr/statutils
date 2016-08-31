@@ -1,0 +1,2 @@
+# statutils
+Basic statistical utilities
