@@ -5,7 +5,7 @@ from scipy import stats
 def fdr(pvals, minuslog10p=False, threshold=0.05):
     if minuslog10p:
         pvals = np.power(10, -pvals)
-    pvals.sort()
+    pvals = np.sort(pvals)
     cs = np.arange(1,len(pvals)+1)*threshold/len(pvals)
     cutoff_p = 0
     for c,p in zip(cs, pvals):

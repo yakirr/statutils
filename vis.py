@@ -13,10 +13,12 @@ def bin_on_x(x, y, nbins = 25):
 def qqplot(pvals, minuslog10p=False, fname=None, show_anyway=False, text=''):
     x = np.arange(1/len(pvals), 1+1/len(pvals), 1/len(pvals))[:len(pvals)]
     logx = -np.log10(x)
+    maxy = 3*np.max(logx)
     if minuslog10p:
         logp = np.sort(pvals)[::-1]
     else:
         logp = -np.log10(np.sort(pvals))
+    logp[logp >= maxy] = maxy
     l, r = min(np.min(logp), np.min(logx)), max(np.max(logx), np.max(logp))
     plt.scatter(logx, logp)
     plt.plot([l, r], [l, r], ls="--", c=".3")
