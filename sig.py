@@ -5,6 +5,7 @@ from scipy import stats
 def fdr(pvals, minuslog10p=False, threshold=0.05):
     if minuslog10p:
         pvals = np.power(10, -pvals)
+    pvals = pvals[~np.isnan(pvals)] # filter out nans so we don't count them as tests
     pvals = np.sort(pvals)
     cs = np.arange(1,len(pvals)+1)*threshold/len(pvals)
     cutoff_p = 0

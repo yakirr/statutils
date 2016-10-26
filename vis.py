@@ -5,7 +5,7 @@ from matplotlib import gridspec
 import matplotlib.pyplot as plt
 
 
-def qqplot(pvals, minuslog10p=False, text=''):
+def qqplot(pvals, minuslog10p=False, text='', fontsize='medium', **kwargs):
     x = np.arange(1/len(pvals), 1+1/len(pvals), 1/len(pvals))[:len(pvals)]
     logx = -np.log10(x)
     maxy = 3*np.max(logx)
@@ -15,23 +15,27 @@ def qqplot(pvals, minuslog10p=False, text=''):
         logp = -np.log10(np.sort(pvals))
     logp[logp >= maxy] = maxy
     l, r = min(np.min(logp), np.min(logx)), max(np.max(logx), np.max(logp))
-    plt.scatter(logx, logp)
+    plt.scatter(logx, logp, **kwargs)
     plt.plot([l, r], [l, r], ls="--", c=".3")
     plt.xlim(min(logx), max(logx))
-    plt.xlabel('-log10(rank/n)')
-    plt.ylabel('-log10(p)')
+    plt.xlabel('-log10(rank/n)', fontsize=fontsize)
+    plt.ylabel('-log10(p)', fontsize=fontsize)
     plt.title(text)
 
 # creates a scatter plot where x is binned and y is averaged within each bin
-def scatter_b(x, y, nbins=25, **kwargs):
-    boundaries = np.linspace(min(x), max(x), nbins)
+def scatter_b(x, y, binsize=50, **kwargs):
+    # boundaries = np.linspace(min(x), max(x), nbins)
+    boundaries = np.concatenate([np.sort(x)[::binsize],[np.max(x)]])
     bins =  zip(boundaries[:-1], boundaries[1:])
+    print(len(bins), 'bins')
 
     binx, biny = np.empty(len(bins)), np.empty(len(bins))
     binx[:] = np.nan; biny[:] = np.nan
     for i, (l, r) in enumerate(bins):
-        binx[i] = np.mean(x[(x>=l)&(x<r)])
-        biny[i] = np.mean(y[(x>=l)&(x<r)])
+        mask = (x>=l)&(x<r)
+        # print(l,r, mask.sum())
+        binx[i] = np.mean(x[mask])
+        biny[i] = np.mean(y[mask])
 
     plt.scatter(binx, biny, **kwargs)
 
