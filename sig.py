@@ -24,8 +24,8 @@ def info(pvals):
 def sigrows(df, pvals, threshold=0.05, qname='q'):
     qvals, _ = info(pvals)
     sigdf = df[qvals <= threshold]
-    sortedindices = [x for (y,x) in sorted(zip(qvals[qvals<=threshold],sigdf.index.values))]
-    return sigdf.loc[sortedindices]
+    sortedindices = [x for (y,x) in sorted(zip(qvals[qvals<=threshold],range(len(sigdf))))]
+    return sigdf.iloc[sortedindices]
 
 
 # st = use Storey-Tibshirani R package
