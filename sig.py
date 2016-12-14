@@ -1,14 +1,10 @@
 from __future__ import print_function, division
 import numpy as np
+import pandas as pd
 from scipy import stats
 
-
-def st_fdr(pvals, threshold=0.05):
-    qvals, pi0 = info(pvals)
-    numsig = (qvals <= threshold).sum()
-    return np.nan, numsig, pi0
-
-def info(pvals):
+# gets q-values from the storey-tibshirani R package
+def st_info(pvals):
     from rpy2.robjects import r, pandas2ri
     pandas2ri.activate()
     from rpy2.robjects.packages import importr
@@ -21,13 +17,6 @@ def info(pvals):
     qvals = py(qobj.rx2('qvalues'))
     return qvals, pi0
 
-def sigrows(df, pvals, threshold=0.05, qname='q'):
-    qvals, _ = info(pvals)
-    sigdf = df[qvals <= threshold]
-    sortedindices = [x for (y,x) in sorted(zip(qvals[qvals<=threshold],range(len(sigdf))))]
-    return sigdf.iloc[sortedindices]
-
-
 # st = use Storey-Tibshirani R package
 def fdr(pvals, minuslog10p=False, threshold=0.05, st=True):
     if minuslog10p:
@@ -35,15 +24,55 @@ def fdr(pvals, minuslog10p=False, threshold=0.05, st=True):
     pvals = pvals[~np.isnan(pvals)] # filter out nans so we don't count them as tests
 
     if st:
-        return st_fdr(pvals, threshold=threshold)
+        qvals, pi0 = st_info(pvals)
+        numsig = (qvals <= threshold).sum()
+        return np.nan, numsig, pi0
     else:
         pvals = np.sort(pvals)
         cs = np.arange(1,len(pvals)+1)*threshold/len(pvals)
-        cutoff_p = 0
-        for c,p in zip(cs, pvals):
-            if p < c:
-                cutoff_p = p
+        less = (pvals <= cs)
+        if less.sum() > 0:
+            cutoff_p = np.max(pvals[less])
+        else:
+            cutoff_p = -1
         return cutoff_p, np.sum(pvals <= cutoff_p), np.nan
+
+# return significant rows of a dataframe
+def sigrows(df, pvals, threshold=0.05, st=True):
+    if st:
+        qvals, _ = st_info(pvals)
+        sigdf = df[qvals <= threshold]
+        sortedindices = [x for (y,x) in sorted(zip(qvals[qvals<=threshold],range(len(sigdf))))]
+        return sigdf.iloc[sortedindices]
+    else:
+        thresh, _, _ = fdr(pvals, threshold=threshold, st=st)
+        return df[pvals <= thresh] #TODO: make this be sorted
+
+# st can be True, False, or 'auto'
+def sigrows_strat(df, pvals, strat, threshold=0.05, st=False, exclude=None):
+    if exclude is not None:
+        df = df[~exclude]
+        pvals = pvals[~exclude]
+        strat = strat[~exclude]
+    result = pd.DataFrame()
+    num_tested = 0
+    for l in np.unique(strat):
+        some = df[strat == l]
+        if len(some) == 0:
+            continue
+        else:
+            num_tested += 1
+        if st=='auto':
+            myst = (len(some) >= 40)
+        else:
+            myst = st
+        mysigrows = sigrows(some, pvals[strat==l], st=myst)
+        print(l, len(some), len(mysigrows))
+        result = pd.concat([result, mysigrows], axis=0)
+    print('tested', num_tested, 'tranches, expected', threshold*num_tested,
+        'results under null. Found', len(result), 'results total')
+    return result
+
 
 
 if __name__ == '__main__':
