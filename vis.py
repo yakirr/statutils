@@ -48,6 +48,11 @@ def scatter_s(x, y, windowsize=100, **kwargs):
 # creates a scatter plot with marginal distribution histograms. kwargs are passed to the
 # scatter function
 def scatter_m(x, y, xbins=None, ybins=None, text='', **kwargs):
+    notnan = np.isfinite(x) & np.isfinite(y)
+    if notnan.sum() < len(x):
+        print('WARNING:', (~notnan).sum(), 'of', len(x), 'entries were nan or inf')
+    x = x[notnan]; y = y[notnan]
+
     if not xbins:
         xbins = int(min(len(x)/20, 100))
     if not ybins:

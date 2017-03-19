@@ -38,21 +38,41 @@ def fdr(pvals, minuslog10p=False, threshold=0.05, st=True):
         return cutoff_p, np.sum(pvals <= cutoff_p), np.nan
 
 # return significant rows of a dataframe
+# st can be True, False, or 'auto'
 def sigrows(df, pvals, threshold=0.05, st=True):
+    if st=='auto':
+        st = (len(df) >= 40)
     if st:
         qvals, _ = st_info(pvals)
-        sigdf = df[qvals <= threshold]
-        sortedindices = [x for (y,x) in sorted(zip(qvals[qvals<=threshold],range(len(sigdf))))]
-        return sigdf.iloc[sortedindices]
+        sigdf = df[qvals<=threshold]
+        sigsort = qvals[qvals<=threshold]
     else:
         thresh, _, _ = fdr(pvals, threshold=threshold, st=st)
-        return df[pvals <= thresh] #TODO: make this be sorted
+        sigdf = df[pvals<=thresh]
+        sigsort = pvals[pvals<=thresh]
+    sortedindices = [x for (y,x) in sorted(zip(sigsort,range(len(sigdf))))]
+    return sigdf.iloc[sortedindices]
 
-# st can be True, False, or 'auto'
-def sigrows_strat(df, pvals, strat, threshold=0.05, st=False, exclude=None):
+# st is unused
+def sigrows_onesidedz(df, zs, threshold=0.05, st=None):
+    zts = np.arange(1,5,0.05)
+    neg = np.array([(zs <= -t).sum() for t in zts], dtype=np.float)
+    pos = np.array([(zs >= t).sum() for t in zts], dtype=np.float)
+    rate = neg/(pos+neg)
+    if any(rate <= threshold):
+        best = min(zts[rate<=0.05])
+    else:
+        best = np.inf
+    sigdf = df[zs>=best]
+    sigsort = -zs[zs>=best]
+    sortedindices = [x for (y,x) in sorted(zip(sigsort,range(len(sigdf))))]
+    return sigdf.iloc[sortedindices]
+
+def sigrows_strat(df, sig_measure, strat, threshold=0.05, st=False, exclude=None,
+        sigrowsfunc=sigrows, output=False):
     if exclude is not None:
         df = df[~exclude]
-        pvals = pvals[~exclude]
+        sig_measure = sig_measure[~exclude]
         strat = strat[~exclude]
     result = pd.DataFrame()
     num_tested = 0
@@ -62,12 +82,9 @@ def sigrows_strat(df, pvals, strat, threshold=0.05, st=False, exclude=None):
             continue
         else:
             num_tested += 1
-        if st=='auto':
-            myst = (len(some) >= 40)
-        else:
-            myst = st
-        mysigrows = sigrows(some, pvals[strat==l], st=myst)
-        print(l, len(some), len(mysigrows))
+        mysigrows = sigrowsfunc(some, sig_measure[strat==l], threshold=threshold, st=st)
+        if output:
+            print(l, len(some), len(mysigrows))
         result = pd.concat([result, mysigrows], axis=0)
     print('tested', num_tested, 'tranches, expected', threshold*num_tested,
         'results under null. Found', len(result), 'results total')
