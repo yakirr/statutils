@@ -24,7 +24,7 @@ def qqplot(pvals, minuslog10p=False, text='', fontsize='medium', **kwargs):
     plt.title(text)
 
 # creates a scatter plot where x is binned and y is averaged within each bin
-def scatter_b(x, y, binsize=50, **kwargs):
+def scatter_b(x, y, binsize=50, func=np.mean, **kwargs):
     # boundaries = np.linspace(min(x), max(x), nbins)
     boundaries = np.concatenate([np.sort(x)[::binsize],[np.max(x)]])
     bins =  zip(boundaries[:-1], boundaries[1:])
@@ -35,16 +35,22 @@ def scatter_b(x, y, binsize=50, **kwargs):
     for i, (l, r) in enumerate(bins):
         mask = (x>=l)&(x<r)
         # print(l,r, mask.sum())
-        binx[i] = np.mean(x[mask])
-        biny[i] = np.mean(y[mask])
+        binx[i] = func(x[mask])
+        biny[i] = func(y[mask])
 
     plt.scatter(binx, biny, **kwargs)
+    return binx, biny
 
 # creates a scatter plot where x is smoothed over some window
-def scatter_s(x, y, windowsize=100, **kwargs):
+def scatter_s(x, y, windowsize=100, perwindow=10, **kwargs):
+    import statutils.smooth as smooth
     df = pd.DataFrame({'x':x, 'y':y})
     df.sort(columns='x', inplace=True)
-    #TODO
+    x = df.x.values
+    y = df.y.values
+    xs = smooth.smooth(x, windowsize, stride=int(windowsize/perwindow))
+    ys = smooth.smooth(y, windowsize, stride=int(windowsize/perwindow))
+    plt.scatter(xs, ys)
 
 # scatter plot with points colored by spatial density
 def scatter_d(x, y, **kwargs):
