@@ -2,6 +2,7 @@ from __future__ import print_function, division
 import numpy as np
 import pandas as pd
 from matplotlib import gridspec
+from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
 
 
@@ -44,6 +45,12 @@ def scatter_s(x, y, windowsize=100, **kwargs):
     df = pd.DataFrame({'x':x, 'y':y})
     df.sort(columns='x', inplace=True)
     #TODO
+
+# scatter plot with points colored by spatial density
+def scatter_d(x, y, **kwargs):
+    xy = np.vstack([x,y])
+    z = gaussian_kde(xy)(xy)
+    plt.scatter(x, y, c=z, edgecolor='', **kwargs)
 
 # creates a scatter plot with marginal distribution histograms. kwargs are passed to the
 # scatter function
