@@ -92,7 +92,19 @@ def scatter_m(x, y, xbins=None, ybins=None, text='', **kwargs):
 # displaying matrices
 
 # cluster and display correlation matrix
-def cluster_and_show(corrdf):
+def cluster_and_show(corrdf, names=None):
+    if names is None:
+        names = corrdf.columns
+
     distance = ssd.squareform(1-np.abs(corrdf.values))
     Y = sch.linkage(distance)
-    clustering = sch.dendrogram(Y, orientation='right')
+    Z = sch.dendrogram(Y, orientation='right', no_plot=True)
+    
+    ind = Z['leaves']
+    plt.imshow(corrdf.values[ind,:][:,ind],
+        cmap=plt.cm.jet, interpolation='none', aspect='auto')
+
+    plt.xticks(np.arange(len(names)), names[ind], rotation='vertical', fontsize=8)
+    plt.yticks(np.arange(len(names)), names[ind], fontsize=8)
+    plt.colorbar()
+    plt.gcf().tight_layout()
