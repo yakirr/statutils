@@ -3,8 +3,13 @@ import numpy as np
 import pandas as pd
 from matplotlib import gridspec
 from scipy.stats import gaussian_kde
+import scipy.cluster.hierarchy as sch
+import scipy.spatial.distance as ssd
 import matplotlib.pyplot as plt
 
+
+#############
+# qq plotting
 
 def qqplot(pvals, minuslog10p=False, text='', fontsize='medium', **kwargs):
     x = np.arange(1/len(pvals), 1+1/len(pvals), 1/len(pvals))[:len(pvals)]
@@ -22,6 +27,9 @@ def qqplot(pvals, minuslog10p=False, text='', fontsize='medium', **kwargs):
     plt.xlabel('-log10(rank/n)', fontsize=fontsize)
     plt.ylabel('-log10(p)', fontsize=fontsize)
     plt.title(text)
+
+#############
+# scatter plots
 
 # creates a scatter plot where x is binned and y is averaged within each bin
 def scatter_b(x, y, binsize=50, func=np.mean, **kwargs):
@@ -79,3 +87,12 @@ def scatter_m(x, y, xbins=None, ybins=None, text='', **kwargs):
     ax11 = plt.subplot(gs[1,1])
     ax11.hist(y, bins=ybins, orientation='horizontal', normed=True)
     plt.title(text)
+
+#############
+# displaying matrices
+
+# cluster and display correlation matrix
+def cluster_and_show(corrdf):
+    distance = ssd.squareform(1-np.abs(corrdf.values))
+    Y = sch.linkage(distance)
+    clustering = sch.dendrogram(Y, orientation='right')
