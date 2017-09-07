@@ -7,6 +7,9 @@ def simes(pvals):
     pvals = np.sort(pvals)
     return np.min(pvals / np.arange(1, len(pvals)+1) * len(pvals))
 
+def chi2(pvals):
+    return stats.chi2.sf(stats.chi2.isf(pvals, 1).sum(), len(pvals))
+
 # gets q-values from the storey-tibshirani R package
 def st_info(pvals):
     from rpy2.robjects import r, pandas2ri
