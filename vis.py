@@ -81,7 +81,7 @@ def scatter_b(x, y, binsize=50, func=np.mean,
     if right_only is not None:
         boundaries = np.concatenate([boundaries[:1], boundaries[-right_only:]])
     bins =  zip(boundaries[:-1], boundaries[1:])
-    print(len(bins), 'bins')
+    print(len(boundaries)-1, 'bins')
 
     binx, biny, std = np.empty(len(bins)), np.empty(len(bins)), np.empty(len(bins))
     binx[:] = np.nan; biny[:] = np.nan
