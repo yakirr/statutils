@@ -11,14 +11,15 @@ import matplotlib.pyplot as plt
 #############
 # qq plotting
 
-def qqplot(pvals, minuslog10p=False, text='', fontsize='medium', errorbars=True,
+def qqplot(pvals, minuslog10p=False, text='', fontsize='medium', errorbars=True, maxy=None,
         ax=None, **kwargs):
     if ax is None:
         ax = plt.gca()
 
     x = np.arange(1/len(pvals), 1+1/len(pvals), 1/len(pvals))[:len(pvals)]
     logx = -np.log10(x)
-    maxy = 3*np.max(logx)
+    if maxy is None:
+        maxy = 3*np.max(logx)
     if minuslog10p:
         logp = np.sort(pvals)[::-1]
     else:
@@ -81,9 +82,10 @@ def scatter_b(x, y, binsize=50, func=np.mean,
     if right_only is not None:
         boundaries = np.concatenate([boundaries[:1], boundaries[-right_only:]])
     bins =  zip(boundaries[:-1], boundaries[1:])
-    print(len(boundaries)-1, 'bins')
+    nbins = len(boundaries)-1
+    print(nbins, 'bins')
 
-    binx, biny, std = np.empty(len(bins)), np.empty(len(bins)), np.empty(len(bins))
+    binx, biny, std = np.empty(nbins), np.empty(nbins), np.empty(nbins)
     binx[:] = np.nan; biny[:] = np.nan
     for i, (l, r) in enumerate(bins):
         mask = (x>=l)&(x<r)
@@ -95,8 +97,6 @@ def scatter_b(x, y, binsize=50, func=np.mean,
     if not errorbars:
         std=None
     ax.errorbar(binx, biny, yerr=std, **kwargs)
-    ax.set_xlim(1.3*min(binx), 1.3*max(binx))
-    ax.set_ylim(1.3*min(biny), 1.3*max(biny))
     return binx, biny
 
 # scatter plot with points colored by spatial density
@@ -104,9 +104,6 @@ def scatter_d(x, y, **kwargs):
     xy = np.vstack([x,y])
     z = gaussian_kde(xy)(xy)
     plt.scatter(x, y, c=z, edgecolor='', **kwargs)
-
-# hex bin plot
-# TODO
 
 # creates a scatter plot with marginal distribution histograms. kwargs are passed to the
 # scatter function
@@ -132,6 +129,38 @@ def scatter_m(x, y, xbins=None, ybins=None, text='', **kwargs):
 
 #############
 # displaying matrices
+
+# plot matrix as nice heatmap
+def matshow(df, height=10, vmin=None, vmax=None, vmid=0,
+    label=False, show_vals=False, cmap='seismic',
+    ax=None, colorbar=True, **kwargs):
+    
+    if type(df) is not pd.DataFrame:
+        df = pd.DataFrame(df)
+
+    if vmin is None:
+        vmin = min(df.min(), -df.max())
+    if vmax is None:
+        vmax = max(df.max(), -df.min())
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(df.shape[1]/df.shape[0]*height, height))
+    else:
+        fig = plt.gcf()
+
+    cax = ax.matshow(df, cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+    if label:
+        ax.set_xticks(range(len(df.columns)))
+        ax.set_xticklabels(df.columns, rotation=90)
+        ax.set_yticks(range(len(df.index)))
+        ax.set_yticklabels(df.index)
+    else:
+        ax.set_xticks([]); ax.set_xticklabels([])
+        ax.set_yticks([]); ax.set_yticklabels([])
+    if show_vals:
+        for (i, j), z in np.ndenumerate(df.values):
+            ax.text(j, i, '{:0.2f}'.format(z), ha='center', va='center')
+    if colorbar:
+        cbar = fig.colorbar(cax, ticks=[vmin, vmax], aspect=40, shrink=.8)
 
 # cluster and display correlation matrix
 # note: column names must be unique
