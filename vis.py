@@ -130,7 +130,7 @@ def scatter_m(x, y, xbins=None, ybins=None, text='', **kwargs):
 #############
 # displaying matrices
 
-# plot matrix as nice heatmap
+# plot matrix as "nice" heatmap
 def matshow(df, height=10, vmin=None, vmax=None, vmid=0,
     label=False, show_vals=False, cmap='seismic',
     ax=None, colorbar=True, **kwargs):
@@ -139,9 +139,9 @@ def matshow(df, height=10, vmin=None, vmax=None, vmid=0,
         df = pd.DataFrame(df)
 
     if vmin is None:
-        vmin = min(df.min(), -df.max())
+        vmin = -np.abs(df).max(skipna=True).max(skipna=True)
     if vmax is None:
-        vmax = max(df.max(), -df.min())
+        vmax = np.abs(df).max(skipna=True).max(skipna=True)
     if ax is None:
         fig, ax = plt.subplots(figsize=(df.shape[1]/df.shape[0]*height, height))
     else:
